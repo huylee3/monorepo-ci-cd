@@ -1,0 +1,15 @@
+packages:
+  - apps/*
+injectWorkspacePackages: true
+onlyBuiltDependencies:
+  - '@prisma/client'
+  - '@prisma/engines'
+  - prisma
+  - esbuild
+  - embedded-postgres
+  - argon2
+  - '@embedded-postgres/linux-x64'
+  - '@embedded-postgres/linux-arm64'
+  - '@embedded-postgres/darwin-x64'
+  - '@embedded-postgres/darwin-arm64'
+  - '@embedded-postgres/windows-x64'

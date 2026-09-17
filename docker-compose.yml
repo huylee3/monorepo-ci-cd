@@ -1,0 +1,80 @@
+x-database-env: &database-env
+  DATABASE_URL: 'postgresql://todo:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@db:5432/todo'
+  DIRECT_URL: 'postgresql://todo:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@db:5432/todo'
+
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: todo
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+      POSTGRES_DB: todo
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U todo -d todo"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  migrate:
+    build: 
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: migration
+    command: ["node", "node_modules/prisma/build/index.js", "migrate", "deploy"]   
+    environment:
+      <<: *database-env
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: api
+    ports:
+      - "3001:3001" # HOST:CONTAINER
+    environment:
+      <<: *database-env
+      NODE_ENV: development
+      HOST: 0.0.0.0
+      PORT: '3001'
+      APP_ORIGIN: http://localhost:3000
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1/health/ready"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    environment:
+      HOST: 0.0.0.0
+      PORT: '3000'
+      API_URL: http://api:3001
+      NODE_ENV: production
+    depends_on:
+      api:
+        condition: service_healthy
+
+  test:
+    build:
+      context: .
+      dockerfile: tests/Dockerfile
+    image: todo-app:test
+
+volumes:
+  postgres-data:
+
+  
+
+

@@ -1,0 +1,327 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+:root {
+  font-family: 'DM Sans', sans-serif;
+  color: #26382e;
+  background: #f8f8f2;
+  font-synthesis: none;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+main {
+  max-width: 1240px;
+  margin: auto;
+  padding: 0 44px;
+}
+header {
+  height: 108px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  border-bottom: 1px solid #dedfd5;
+}
+.brand {
+  font-family: Manrope, sans-serif;
+  font-size: 30px;
+  letter-spacing: -1.5px;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.eyebrow {
+  margin: auto;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: #6d776d;
+}
+.tag {
+  font-size: 10px;
+  letter-spacing: 2px;
+  font-weight: 700;
+  color: #6b7f61;
+}
+h1,
+h2,
+h3 {
+  font-family: Manrope, sans-serif;
+}
+h1 {
+  font-size: 58px;
+  line-height: 1.12;
+  letter-spacing: -3px;
+  font-weight: 500;
+  margin: 24px 0;
+}
+h2 {
+  font-size: 26px;
+  letter-spacing: -1px;
+  font-weight: 500;
+}
+p {
+  color: #72796d;
+  line-height: 1.65;
+}
+.intro {
+  font-size: 17px;
+}
+.auth {
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  gap: 100px;
+  align-items: center;
+  min-height: 700px;
+}
+.card {
+  padding: 34px;
+  background: white;
+  border: 1px solid #e1e4d9;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px #24331c04;
+}
+.card h2 {
+  margin: 16px 0 8px;
+}
+.card p {
+  margin-top: 0;
+  font-size: 14px;
+}
+label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin: 22px 0 12px;
+}
+input:not([type='checkbox']),
+textarea {
+  font: inherit;
+  color: inherit;
+  width: 100%;
+  display: block;
+  padding: 13px;
+  border: 1px solid #dce0d5;
+  border-radius: 7px;
+  margin-top: 8px;
+  background: #fcfcf8;
+}
+textarea {
+  resize: vertical;
+}
+small {
+  font-size: 11px;
+  color: #7c8377;
+  font-weight: 400;
+}
+button {
+  font: inherit;
+  cursor: pointer;
+  border: 0;
+  border-radius: 6px;
+  padding: 10px 16px;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+.primary {
+  display: block;
+  background: #334e3c;
+  color: white;
+  width: 100%;
+  padding: 14px;
+  margin-top: 24px;
+}
+.quiet {
+  background: transparent;
+  color: #64735e;
+  font-size: 12px;
+}
+.card > .quiet {
+  width: 100%;
+  margin-top: 10px;
+}
+.illustration {
+  margin-top: 44px;
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  background: #e8eddd;
+  border-radius: 50% 40% 45% 35%;
+  padding: 32px;
+  max-width: 320px;
+  transform: rotate(-3deg);
+}
+.illustration > span {
+  border: 1px solid #6b7f61;
+  border-radius: 50%;
+  font-size: 28px;
+  padding: 12px;
+}
+.illustration div {
+  font-family: Manrope;
+  font-size: 20px;
+}
+.heading {
+  padding: 56px 0 26px;
+}
+.heading h1 {
+  font-size: 48px;
+  margin: 14px 0;
+}
+.columns {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 30px;
+  align-items: start;
+}
+.list nav {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  border-bottom: 1px solid #dfe3d7;
+  padding: 0 0 18px;
+}
+.list nav button {
+  background: transparent;
+  color: #78816f;
+  font-size: 13px;
+}
+.list nav .selected {
+  background: #e6eddd;
+  color: #34482e;
+}
+.list nav span {
+  margin-left: auto;
+  color: #8b9384;
+  font-size: 12px;
+}
+.todo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid #e2e5da;
+  padding: 22px 0;
+}
+.todo > div {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.todo h3 {
+  font-size: 15px;
+  margin: 0;
+  font-weight: 600;
+}
+.todo p {
+  font-size: 13px;
+  margin: 6px 0 0;
+  white-space: pre-wrap;
+}
+.todo input {
+  accent-color: #536b44;
+  width: 19px;
+  height: 19px;
+}
+.todo button {
+  padding: 5px;
+}
+.done {
+  text-decoration: line-through;
+  color: #969e8b;
+}
+.composer {
+  padding: 26px;
+}
+.empty {
+  text-align: center;
+  padding: 80px 10px;
+}
+.empty > span {
+  font-size: 42px;
+  color: #93a77a;
+}
+.empty h2 {
+  font-size: 22px;
+}
+.empty p {
+  font-size: 14px;
+}
+.error {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff0e9;
+  border: 1px solid #b97858;
+  border-radius: 8px;
+  padding: 14px 24px;
+  max-width: 95%;
+  z-index: 2;
+}
+footer {
+  margin-top: 80px;
+  border-top: 1px solid #dedfd5;
+  display: flex;
+  justify-content: space-between;
+  padding: 28px 0;
+  color: #89917e;
+  font-size: 12px;
+}
+footer span {
+  font-size: 9px;
+  letter-spacing: 2px;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+:focus-visible {
+  outline: 2px solid #6e8958;
+  outline-offset: 3px;
+}
+@media (max-width: 800px) {
+  main {
+    padding: 0 22px;
+  }
+  .eyebrow {
+    display: none;
+  }
+  header {
+    height: 82px;
+    justify-content: space-between;
+  }
+  .auth {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    padding: 44px 0;
+  }
+  .auth h1 {
+    font-size: 44px;
+  }
+  .illustration {
+    display: none;
+  }
+  .columns {
+    grid-template-columns: 1fr;
+  }
+  .composer {
+    grid-row: 1;
+  }
+  .heading h1 {
+    font-size: 40px;
+  }
+  .todo {
+    gap: 8px;
+  }
+  footer {
+    margin-top: 40px;
+  }
+}
