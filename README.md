@@ -4,7 +4,7 @@ A TypeScript todo app for practicing CI/CD. The API uses Express, Prisma, and Po
 
 ## Run locally
 
-Requires Node.js 22.12+, pnpm 10.32.1, and Java 17+.
+Requires Node.js 22.12+, pnpm 12.4.2, and Java 17+.
 
 ```sh
 pnpm install --frozen-lockfile

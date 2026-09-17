@@ -2,29 +2,32 @@
 
 # Keep build/runtime OS and Node versions aligned for native dependencies.
 FROM node:24-bookworm-slim AS runtime
-WORKDIR /app
-
-# install ca-certs and openssl since prisma requires them
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates openssl \
     && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
 
 FROM runtime AS dependencies
-RUN npm install --global pnpm@12.4.2
-
-# copy package info files
+# Match package.json's packageManager, rather than using a different major.
+RUN npm install --global pnpm@10.32.1
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3 make g++ \
+    && rm -rf /var/lib/apt/lists/*
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/api/package.json ./apps/api/package.json
 COPY apps/web/package.json ./apps/web/package.json
-
-# install dependencies 
 RUN --mount=type=cache,id=todo-pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile --store-dir=/pnpm/store
 
-FROM dependencies AS test
-COPY --chown=node:node . .
-RUN pnpm db:generate && chown node:node /app
+FROM dependencies AS web-build
+COPY tsconfig.base.json ./
+COPY apps/web ./apps/web
+RUN pnpm --filter @todo/web build
+
+FROM runtime AS web
+COPY --from=web-build --chown=node:node /app/apps/web/.output ./.output
 USER node
-# Dependencies are installed at build time; pnpm must not rewrite root-owned node_modules at runtime.
-ENV NODE_ENV=test PNPM_CONFIG_VERIFY_DEPS_BEFORE_RUN=false
-CMD ["pnpm", "test"]
+ENV NODE_ENV=production HOST=0.0.0.0 PORT=3000
+EXPOSE 3000
+CMD ["node", ".output/server/index.mjs"]
+
