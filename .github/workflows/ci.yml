@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/setup@v2
+        with:
+          runtime: node@24
+          cache: true
+          require-lockfile: true
+
+      - name: Generate Prisma Client
+        run: pnpm db:generate
+
+      - name: Check formatting
+        run: pnpm format:check
+
+      - name: Check types
+        run: pnpm typecheck
+
+      - name: Run unit tests
+        run: pnpm test
+
+      - name: Start PostgreSQL and WireMock
+        run: pnpm services
+
+      - name: Apply test database migrations
+        run: pnpm db:migrate:test
+
+      - name: Run API integration tests
+        run: pnpm test:api
+
+      - name: Run WireMock tests
+        run: pnpm test:mock
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run browser tests
+        run: pnpm test:e2e
+
+      - name: Upload browser test report on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: playwright-report/
+          if-no-files-found: ignore
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Build API image
+        run: docker build -f apps/api/Dockerfile --target api -t todo-api:ci .
+
+      - name: Build migration image
+        run: docker build -f apps/api/Dockerfile --target migration -t todo-migrate:ci .
+
+      - name: Build web image
+        run: docker build -f apps/web/Dockerfile --target web -t todo-web:ci .
+
+      - name: Log in to Docker Hub
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        uses: docker/login-action@v4
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Publish images to Docker Hub
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        env:
+          DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
+          IMAGE_TAG: sha-${{ github.sha }}
+        run: |
+          for image in api migrate web; do
+            docker tag "todo-${image}:ci" "${DOCKERHUB_USERNAME}/todo-${image}:${IMAGE_TAG}"
+            docker tag "todo-${image}:ci" "${DOCKERHUB_USERNAME}/todo-${image}:latest"
+            docker push "${DOCKERHUB_USERNAME}/todo-${image}:${IMAGE_TAG}"
+            docker push "${DOCKERHUB_USERNAME}/todo-${image}:latest"
+          done

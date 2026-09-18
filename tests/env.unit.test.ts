@@ -39,16 +39,23 @@ describe('app environment loading', () => {
       readAppEnv('api', { DATABASE_URL: 'injected' }, workspace()),
     ).toEqual({ DATABASE_URL: 'injected' });
   });
-  it('does not use development database URLs in tests', () => {
+  it('uses the Compose database in tests', () => {
     const directory = workspace();
     writeFileSync(
       join(directory, 'apps/api/.env'),
       'DATABASE_URL=development\nDIRECT_URL=development-direct\n',
     );
     const env = readTestEnv({}, directory);
-    expect(env.DATABASE_URL).toMatch(/\/todo_test$/);
+    expect(env.DATABASE_URL).toMatch(/\/todo$/);
     expect(env.DIRECT_URL).toBe(env.DATABASE_URL);
     expect(env.NODE_ENV).toBe('test');
+  });
+  it('uses the Compose password when one is configured', () => {
+    const directory = workspace();
+    writeFileSync(join(directory, '.env'), 'POSTGRES_PASSWORD=custom-secret\n');
+    expect(readTestEnv({}, directory).DATABASE_URL).toBe(
+      'postgresql://todo:custom-secret@127.0.0.1:55432/todo',
+    );
   });
   it('uses the test URL from the file with shell overrides taking precedence', () => {
     const directory = workspace();

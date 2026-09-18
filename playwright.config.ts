@@ -1,4 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
+import { readTestEnv } from './scripts/env.mjs';
+const { DATABASE_URL, DIRECT_URL, JWT_SECRET, NODE_ENV, APP_ORIGIN } =
+  readTestEnv();
 export default defineConfig({
   testDir: 'tests/e2e',
   fullyParallel: false,
@@ -6,7 +9,8 @@ export default defineConfig({
   reporter: [['list'], ['html', { open: 'never' }]],
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
-    command: 'node scripts/e2e-server.mjs',
+    command: 'pnpm dev',
+    env: { DATABASE_URL, DIRECT_URL, JWT_SECRET, NODE_ENV, APP_ORIGIN },
     url: 'http://localhost:3000',
     reuseExistingServer: false,
     timeout: 60000,

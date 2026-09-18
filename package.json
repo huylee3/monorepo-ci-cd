@@ -7,8 +7,9 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "dev": "node scripts/dev.mjs",
-    "services": "node scripts/services.mjs",
+    "dev": "pnpm --parallel -r dev",
+    "services": "docker compose up -d --wait db wiremock",
+    "services:stop": "docker compose stop db wiremock",
     "db:generate": "pnpm --filter @todo/api db:generate",
     "db:migrate": "node scripts/db.mjs",
     "build": "pnpm -r build",
@@ -21,14 +22,13 @@
     "db:migrate:test": "node scripts/db.mjs --test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "dev:api": "node scripts/dev.mjs api",
-    "dev:web": "node scripts/dev.mjs web"
+    "dev:api": "pnpm --filter @todo/api dev",
+    "dev:web": "pnpm --filter @todo/web dev"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
     "@types/node": "^22.0.0",
     "@types/supertest": "^6.0.3",
-    "embedded-postgres": "18.4.0-beta.17",
     "prettier": "3.8.1",
     "supertest": "^7.2.2",
     "tsx": "^4.21.0",

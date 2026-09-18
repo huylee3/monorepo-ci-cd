@@ -18,9 +18,19 @@ export function readAppEnv(app, inherited = process.env, workspace = root) {
 
 export function readTestEnv(inherited = process.env, workspace = root) {
   const env = readAppEnv('api', inherited, workspace);
+  let composeEnv = {};
+  try {
+    composeEnv = parseEnv(readFileSync(resolve(workspace, '.env'), 'utf8'));
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
+  const password =
+    inherited.POSTGRES_PASSWORD ||
+    composeEnv.POSTGRES_PASSWORD ||
+    'local-development-only';
   const database =
     env.TEST_DATABASE_URL ??
-    'postgresql://todo:local-development-only@127.0.0.1:55432/todo_test';
+    `postgresql://todo:${encodeURIComponent(password)}@127.0.0.1:55432/todo`;
   return {
     ...env,
     NODE_ENV: 'test',
