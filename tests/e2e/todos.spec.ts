@@ -1,9 +1,9 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 test('register, create, edit, filter, delete, and log in again', async ({
   page,
+  account,
 }) => {
-  const username = `e2e_${Date.now()}`,
-    password = 'a very memorable test passphrase';
+  const { username, password } = account;
   await page.goto('/');
   await page
     .getByRole('button', { name: 'New here? Create an account' })

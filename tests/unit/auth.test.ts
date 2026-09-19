@@ -16,19 +16,19 @@ const { repo, passwords } = vi.hoisted(() => ({
     verify: vi.fn(),
   },
 }));
-vi.mock('../apps/api/src/repositories/auth.repository.js', () => ({
+vi.mock('../../apps/api/src/repositories/auth.repository.js', () => ({
   authRepository: repo,
 }));
 const { argonPath } = await vi.hoisted(async () => {
   const { createRequire } = await import('node:module');
   return {
     argonPath: createRequire(
-      new URL('../apps/api/package.json', import.meta.url),
+      new URL('../../apps/api/package.json', import.meta.url),
     ).resolve('argon2'),
   };
 });
 vi.mock(argonPath, () => ({ default: passwords }));
-import { authService } from '../apps/api/src/services/auth.service';
+import { authService } from '../../apps/api/src/services/auth.service';
 
 const user = { id: 'user-1', username: 'alice', passwordHash: 'stored-hash' };
 const session = () => ({
@@ -137,6 +137,11 @@ describe('registration and login', () => {
 });
 
 describe('access token authentication', () => {
+  it('propagates database outages instead of treating them as invalid credentials', async () => {
+    const failure = new Error('Database unavailable');
+    repo.session.mockRejectedValueOnce(failure);
+    await expect(authService.authenticate(jwt())).rejects.toBe(failure);
+  });
   it('accepts a valid JWT only with an active matching session', async () => {
     await expect(authService.authenticate(jwt())).resolves.toEqual({
       user: { id: user.id, username: 'alice' },
@@ -191,7 +196,7 @@ describe('access token authentication', () => {
 });
 
 describe('refresh and logout', () => {
-  it.each(['', 'session-only', '.token', 'session.'])(
+  it.each(['', 'session-only', '.token', 'session.', 'session.token.extra'])(
     'rejects malformed refresh credentials (%#)',
     async (value) => {
       await expect(authService.refresh(value)).rejects.toMatchObject({

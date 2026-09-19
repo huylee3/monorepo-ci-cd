@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isAllowedOrigin } from '../apps/api/src/middleware/origin';
+import { isAllowedOrigin } from '../../apps/api/src/middleware/origin';
 const configured = 'http://localhost:3000';
 describe('CSRF origin checks', () => {
   it.each(['development', 'test', 'production'])(

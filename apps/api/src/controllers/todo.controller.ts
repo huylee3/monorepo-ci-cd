@@ -1,7 +1,10 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { authenticate } from '../middleware/auth.js';
-import { todoService } from '../services/todo.service.js';
+import { createTodoService } from '../services/todo.service.js';
+import { todoRepository } from '../repositories/todo.repository.js';
+
+const todoService = createTodoService(todoRepository);
 const fields = {
   title: z.string().trim().min(1).max(200),
   description: z.string().max(2000),

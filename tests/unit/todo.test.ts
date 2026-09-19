@@ -1,5 +1,5 @@
 import { beforeEach, describe, it, expect, vi } from 'vitest';
-import { createTodoService } from '../apps/api/src/services/todo.service';
+import { createTodoService } from '../../apps/api/src/services/todo.service';
 describe('todo service', () => {
   const repo = {
     list: vi.fn(),

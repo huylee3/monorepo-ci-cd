@@ -1,62 +1,59 @@
 # Daybook
 
-A TypeScript todo app for practicing CI/CD. The API uses Express, Prisma, and PostgreSQL; the web app uses TanStack Start.
+A TypeScript todo app with an Express API, Prisma/PostgreSQL persistence, and a TanStack Start web app.
 
-## Run locally
+## Development
 
-Requires Node.js 22.12+, pnpm 12.4.2, and Docker Compose.
+Requires Node.js 22.12+, pnpm 12.4.2, and a running PostgreSQL database.
 
 ```sh
 pnpm install --frozen-lockfile
 cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env
-# Set JWT_SECRET in apps/api/.env to a random value of at least 32 characters.
-pnpm db:generate
-pnpm services
 ```
 
-If `.env` sets `POSTGRES_PASSWORD`, use the same password in the database URLs in `apps/api/.env`. Without it, Compose uses the local development password shown in `apps/api/.env.example`.
-
-The `db` and `wiremock` services in `docker-compose.yml` keep running in the background. Then run:
+Set `DATABASE_URL` and `DIRECT_URL` to your development database, and set `JWT_SECRET` to a random value of at least 32 characters. Provision the database before applying migrations.
 
 ```sh
+pnpm db:generate
 pnpm db:migrate
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). The API listens on port 3001. Local PostgreSQL and WireMock use ports 55432 and 8080. Run `pnpm services:stop` when done; the PostgreSQL data remains in a Docker volume.
+Open [http://localhost:3000](http://localhost:3000). The API listens on port 3001. The web server proxies `/api` to `API_URL`; browser requests use same-origin cookies. Shell variables override each app's `.env` file. Keep credentials out of source control.
 
-## Test and build
+## Structure
 
-```sh
-pnpm test                 # Unit tests
-pnpm db:migrate:test      # Apply migrations to the shared local database
-pnpm test:api             # API integration tests; requires pnpm services
-pnpm test:mock            # WireMock tests; requires pnpm services
-pnpm exec playwright install chromium
-pnpm test:e2e             # Browser tests
-pnpm typecheck
-pnpm build
-```
+- `apps/api/src/app.ts`: HTTP app factory, security middleware, routes, and health endpoints.
+- `apps/api/src/bootstrap.ts`: production wiring for controllers, configuration, and PostgreSQL.
+- `apps/api/src/controllers`: request validation and response handling.
+- `apps/api/src/services`: business rules and authentication.
+- `apps/api/src/repositories`: database operations, including ownership checks and atomic refresh-token rotation.
+- `apps/web/src`: routes, UI, and the HTTP client.
+- `tests/unit`, `tests/integration`, `tests/mock`, `tests/e2e`: separate test layers.
+- `scripts`: environment loading and migration commands.
 
-Integration and browser tests use the same local `todo` database as development. They may change or delete development data. Set `TEST_DATABASE_URL` if you need a separate test database.
+Services should keep business logic separate from HTTP concerns. The todo service takes its repository explicitly. HTTP tests use the app factory with stub handlers; production dependencies are assembled only by the bootstrap module.
 
-## CI
-
-GitHub Actions runs on pull requests and pushes to `main`. It checks formatting and types, runs unit, API integration, WireMock, and browser tests against isolated local services, then builds the API, migration, and production web images. Successful runs on `main` publish the images to Docker Hub as `todo-api`, `todo-migrate`, and `todo-web`, each tagged `latest` and `sha-<commit SHA>`. Pull requests build the images without publishing them. See [the CI workflow](.github/workflows/ci.yml).
-
-Before the first publish, create those three repositories under your Docker Hub account. In the GitHub repository, set the Actions variable `DOCKERHUB_USERNAME` to your Docker Hub username and the Actions secret `DOCKERHUB_TOKEN` to a Docker Hub personal access token with write access. A push to `main`, or a manual run of the workflow on `main`, then publishes the images.
-
-## Docker
-
-Build from the repository root because the apps share a pnpm workspace and lockfile:
+## Verification
 
 ```sh
-docker build -f apps/api/Dockerfile --target api -t todo-api:local .
-docker build -f apps/api/Dockerfile --target migration -t todo-migrate:local .
-docker build -f apps/web/Dockerfile --target web -t todo-web:local .
+pnpm check               # Formatting, application/test types, unit and HTTP-boundary tests
+pnpm build               # Compile API and build production web output
 ```
 
-The API image runs compiled code on port 3001. The migration image applies committed Prisma migrations. Supply `DATABASE_URL`, `JWT_SECRET`, and `APP_ORIGIN` to the API, and `DATABASE_URL` and `DIRECT_URL` to migrations. Keep credentials out of the images.
+For tests that use external services, see [the testing guide](tests/README.md). `pnpm test` needs no running database or WireMock instance.
 
-Source lives in `apps/api` and `apps/web`; tests live in `tests`. Only `.env.example` files should be committed.
+```sh
+pnpm db:migrate:test     # Requires an explicit TEST_DATABASE_URL
+pnpm test:api            # Real API + dedicated PostgreSQL database
+pnpm test:mock           # WireMock HTTP scenarios
+pnpm test:e2e            # Chromium + both applications + dedicated PostgreSQL
+pnpm test:all            # All four test layers; services must already be running
+```
+
+## Deployment boundaries
+
+Run committed migrations before starting a new API version. Production requires `NODE_ENV=production`, a strong `JWT_SECRET`, `DATABASE_URL`, and an exact `APP_ORIGIN`. Set `HOST` for the deployment network and terminate HTTPS at the ingress. `/health/live` checks process liveness; `/health/ready` returns 503 when PostgreSQL is unavailable. API responses disable caching, authentication cookies are HTTP-only, and production cookies require HTTPS.
+
+Container files have been removed from this checkout. Existing GitHub workflows still reference them and need a separate CI/container update before those workflows can pass. This refactor does not restore or redesign that setup. Multi-instance deployments also need a shared rate-limit store; the current limiter keeps state in each API process.

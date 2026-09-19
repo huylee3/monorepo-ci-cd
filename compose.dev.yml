@@ -1,0 +1,44 @@
+services:
+  db: 
+    environment:
+      POSTGRES_USER: dev
+      POSTGRES_PASSWORD: dev
+      POSTGRES_DB: dev_db
+    image: postgres:18
+    volumes:
+      - dev-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "127.0.0.1:54332:5432"
+
+  test-db:
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: test_db
+    image: postgres:18
+    tmpfs: 
+      - /var/lib/postgresql
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"
+      interval: 2s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    ports:
+      - "127.0.0.1:54333:5432"
+  
+  wiremock:
+    image: wiremock/wiremock:3.13.2
+    ports:
+      - "127.0.0.1:8080:8080"
+
+volumes:
+  dev-data:
+  

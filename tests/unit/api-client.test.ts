@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ApiError, createApi } from '../apps/web/src/api';
+import { ApiError, createApi } from '../../apps/web/src/api';
 const json = (body: unknown, status = 200) => Response.json(body, { status });
 
 describe('frontend API client', () => {
@@ -22,10 +22,29 @@ describe('frontend API client', () => {
         body: '{"title":"Ship"}',
         signal,
         credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
+        headers: new Headers({ 'Content-Type': 'application/json' }),
       }),
     );
   });
+  it.each([
+    new Headers({ 'X-Request-ID': 'trace' }),
+    [['X-Request-ID', 'trace']] as [string, string][],
+  ])('preserves all supported header representations (%#)', async (headers) => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(json({}));
+    await createApi('/api', fetcher).request('/todos', { headers });
+    expect(
+      new Headers(fetcher.mock.calls[0][1]?.headers).get('X-Request-ID'),
+    ).toBe('trace');
+  });
+  it.each([null, { error: {} }, { error: 123 }])(
+    'handles malformed JSON error payloads (%#)',
+    async (body) => {
+      const fetcher = vi.fn<typeof fetch>().mockResolvedValue(json(body, 502));
+      await expect(
+        createApi('/api', fetcher).request('/todos'),
+      ).rejects.toEqual(new ApiError(502, 'Request failed'));
+    },
+  );
   it('handles empty 204 responses', async () => {
     const fetcher = vi
       .fn<typeof fetch>()

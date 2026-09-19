@@ -1,4 +1,4 @@
-import { app } from './app.js';
+import { app } from './bootstrap.js';
 import { config } from './config.js';
 import { db } from './repositories/database.js';
 const server = app.listen(config.PORT, config.HOST, () =>

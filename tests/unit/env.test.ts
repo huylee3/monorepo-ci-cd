@@ -2,7 +2,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { readAppEnv, readTestEnv } from '../scripts/env.mjs';
+import { readAppEnv, readTestEnv } from '../../scripts/env.mjs';
 const directories: string[] = [];
 function workspace() {
   const directory = mkdtempSync(join(tmpdir(), 'todo-env-'));
@@ -39,36 +39,47 @@ describe('app environment loading', () => {
       readAppEnv('api', { DATABASE_URL: 'injected' }, workspace()),
     ).toEqual({ DATABASE_URL: 'injected' });
   });
-  it('uses the Compose database in tests', () => {
+  it('requires an explicit test database without falling back to development', () => {
+    expect(() => readTestEnv({}, workspace())).toThrow('Set TEST_DATABASE_URL');
+  });
+  it('rejects the development database even with different credentials and loopback aliases', () => {
+    expect(() =>
+      readTestEnv(
+        {
+          DATABASE_URL: 'postgresql://dev:secret@localhost/todo',
+          TEST_DATABASE_URL:
+            'postgresql://test:other@127.0.0.1:5432/todo?schema=public',
+        },
+        workspace(),
+      ),
+    ).toThrow('must differ');
+  });
+  it('rejects non-PostgreSQL URLs', () => {
+    expect(() =>
+      readTestEnv(
+        { TEST_DATABASE_URL: 'https://example.com/test' },
+        workspace(),
+      ),
+    ).toThrow('PostgreSQL URL');
+  });
+  it('loads a dedicated database and gives shell overrides precedence', () => {
     const directory = workspace();
     writeFileSync(
       join(directory, 'apps/api/.env'),
-      'DATABASE_URL=development\nDIRECT_URL=development-direct\n',
+      'TEST_DATABASE_URL=postgresql://localhost/file_test\n',
     );
-    const env = readTestEnv({}, directory);
-    expect(env.DATABASE_URL).toMatch(/\/todo$/);
-    expect(env.DIRECT_URL).toBe(env.DATABASE_URL);
-    expect(env.NODE_ENV).toBe('test');
-  });
-  it('uses the Compose password when one is configured', () => {
-    const directory = workspace();
-    writeFileSync(join(directory, '.env'), 'POSTGRES_PASSWORD=custom-secret\n');
     expect(readTestEnv({}, directory).DATABASE_URL).toBe(
-      'postgresql://todo:custom-secret@127.0.0.1:55432/todo',
+      'postgresql://localhost/file_test',
     );
-  });
-  it('uses the test URL from the file with shell overrides taking precedence', () => {
-    const directory = workspace();
-    writeFileSync(
-      join(directory, 'apps/api/.env'),
-      'TEST_DATABASE_URL=file-test\n',
-    );
-    expect(readTestEnv({}, directory).DATABASE_URL).toBe('file-test');
     const env = readTestEnv(
-      { TEST_DATABASE_URL: 'ci-test', DIRECT_URL: 'production' },
+      {
+        TEST_DATABASE_URL: 'postgresql://localhost/ci_test',
+        DIRECT_URL: 'postgresql://localhost/production',
+      },
       directory,
     );
-    expect(env.DATABASE_URL).toBe('ci-test');
-    expect(env.DIRECT_URL).toBe('ci-test');
+    expect(env.DATABASE_URL).toBe('postgresql://localhost/ci_test');
+    expect(env.DIRECT_URL).toBe(env.DATABASE_URL);
+    expect(env.NODE_ENV).toBe('test');
   });
 });

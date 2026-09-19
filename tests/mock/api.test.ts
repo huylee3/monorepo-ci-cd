@@ -1,5 +1,5 @@
 import { beforeEach, describe, it, expect } from 'vitest';
-import { createApi } from '../apps/web/src/api';
+import { createApi } from '../../apps/web/src/api';
 const base = process.env.WIREMOCK_URL ?? 'http://127.0.0.1:8080';
 async function stub(
   method: string,
@@ -23,7 +23,10 @@ async function stub(
 }
 beforeEach(async () => {
   const r = await fetch(`${base}/__admin/reset`, { method: 'POST' });
-  if (!r.ok) throw Error('Start WireMock with pnpm services');
+  if (!r.ok)
+    throw Error(
+      'WireMock reset failed; start a dedicated WireMock instance and set WIREMOCK_URL',
+    );
 });
 describe('frontend API client against WireMock', () => {
   it('reads real HTTP responses', async () => {
@@ -60,38 +63,38 @@ describe('frontend API client against WireMock', () => {
     }).then((r) => r.json());
     expect(count.count).toBe(1);
   });
-});
 
-it('renews an expired access token and retries the original request', async () => {
-  for (const mapping of [
-    {
-      scenarioName: 'renewal',
-      requiredScenarioState: 'Started',
-      request: { method: 'GET', url: '/api/todos' },
-      response: { status: 401, jsonBody: { error: 'Expired' } },
-    },
-    {
-      scenarioName: 'renewal',
-      requiredScenarioState: 'Started',
-      newScenarioState: 'Renewed',
-      request: { method: 'POST', url: '/api/auth/refresh' },
-      response: { status: 200, jsonBody: { user: { id: '1' } } },
-    },
-    {
-      scenarioName: 'renewal',
-      requiredScenarioState: 'Renewed',
-      request: { method: 'GET', url: '/api/todos' },
-      response: { status: 200, jsonBody: { todos: [] } },
-    },
-  ]) {
-    const response = await fetch(`${base}/__admin/mappings`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(mapping),
+  it('renews an expired access token and retries the original request', async () => {
+    for (const mapping of [
+      {
+        scenarioName: 'renewal',
+        requiredScenarioState: 'Started',
+        request: { method: 'GET', url: '/api/todos' },
+        response: { status: 401, jsonBody: { error: 'Expired' } },
+      },
+      {
+        scenarioName: 'renewal',
+        requiredScenarioState: 'Started',
+        newScenarioState: 'Renewed',
+        request: { method: 'POST', url: '/api/auth/refresh' },
+        response: { status: 200, jsonBody: { user: { id: '1' } } },
+      },
+      {
+        scenarioName: 'renewal',
+        requiredScenarioState: 'Renewed',
+        request: { method: 'GET', url: '/api/todos' },
+        response: { status: 200, jsonBody: { todos: [] } },
+      },
+    ]) {
+      const response = await fetch(`${base}/__admin/mappings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(mapping),
+      });
+      expect(response.ok).toBe(true);
+    }
+    await expect(createApi(`${base}/api`).request('/todos')).resolves.toEqual({
+      todos: [],
     });
-    expect(response.ok).toBe(true);
-  }
-  await expect(createApi(`${base}/api`).request('/todos')).resolves.toEqual({
-    todos: [],
   });
 });

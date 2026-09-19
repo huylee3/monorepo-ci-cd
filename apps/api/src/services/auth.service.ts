@@ -1,7 +1,7 @@
 import argon2 from 'argon2';
 import { createHash, randomBytes } from 'node:crypto';
 import { SignJWT, jwtVerify } from 'jose';
-import { Prisma } from '@prisma/client';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library.js';
 import { config } from '../config.js';
 import { authRepository as repo } from '../repositories/auth.repository.js';
 import { AppError } from './errors.js';
@@ -27,6 +27,20 @@ async function access(userId: string, sessionId: string) {
     .setExpirationTime('15m')
     .sign(config.secret);
 }
+async function verifyAccessToken(token: string) {
+  try {
+    const { payload } = await jwtVerify(token, config.secret, {
+      algorithms: ['HS256'],
+      issuer: 'todo-api',
+      audience: 'todo-web',
+    });
+    if (typeof payload.sid !== 'string' || !payload.sub) throw Error();
+    return { sessionId: payload.sid, userId: payload.sub };
+  } catch {
+    throw new AppError(401, 'Authentication required');
+  }
+}
+
 async function session(user: { id: string; username: string }) {
   const token = randomBytes(32).toString('base64url');
   const s = await repo.createSession(
@@ -50,10 +64,7 @@ export const authService = {
         ),
       );
     } catch (e) {
-      if (
-        e instanceof Prisma.PrismaClientKnownRequestError &&
-        e.code === 'P2002'
-      )
+      if (e instanceof PrismaClientKnownRequestError && e.code === 'P2002')
         throw new AppError(409, 'Username unavailable');
       throw e;
     }
@@ -68,29 +79,21 @@ export const authService = {
     return session(u);
   },
   async authenticate(token: string) {
-    try {
-      const { payload } = await jwtVerify(token, config.secret, {
-        algorithms: ['HS256'],
-        issuer: 'todo-api',
-        audience: 'todo-web',
-      });
-      if (typeof payload.sid !== 'string' || !payload.sub) throw Error();
-      const s = await repo.session(payload.sid);
-      if (
-        !s ||
-        s.revokedAt ||
-        s.expiresAt <= new Date() ||
-        s.userId !== payload.sub
-      )
-        throw Error();
-      return { user: publicUser(s.user), sessionId: s.id };
-    } catch {
+    const payload = await verifyAccessToken(token);
+    const s = await repo.session(payload.sessionId);
+    if (
+      !s ||
+      s.revokedAt ||
+      s.expiresAt <= new Date() ||
+      s.userId !== payload.userId
+    )
       throw new AppError(401, 'Authentication required');
-    }
+    return { user: publicUser(s.user), sessionId: s.id };
   },
   async refresh(value: string) {
-    const [id, token] = value.split('.');
-    if (!id || !token) throw new AppError(401, 'Invalid session');
+    const [id, token, extra] = value.split('.');
+    if (!id || !token || extra !== undefined)
+      throw new AppError(401, 'Invalid session');
     const s = await repo.session(id);
     if (!s || s.revokedAt || s.expiresAt <= new Date())
       throw new AppError(401, 'Session expired');

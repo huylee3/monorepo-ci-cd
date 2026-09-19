@@ -1,6 +1,6 @@
-import { todoRepository } from '../repositories/todo.repository.js';
+import type { todoRepository } from '../repositories/todo.repository.js';
 import { AppError } from './errors.js';
-export function createTodoService(repo = todoRepository) {
+export function createTodoService(repo: typeof todoRepository) {
   return {
     list: repo.list,
     create: repo.create,
@@ -19,4 +19,3 @@ export function createTodoService(repo = todoRepository) {
     },
   };
 }
-export const todoService = createTodoService();

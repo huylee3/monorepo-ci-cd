@@ -8,12 +8,10 @@
   },
   "scripts": {
     "dev": "pnpm --parallel -r dev",
-    "services": "docker compose up -d --wait db wiremock",
-    "services:stop": "docker compose stop db wiremock",
     "db:generate": "pnpm --filter @todo/api db:generate",
     "db:migrate": "node scripts/db.mjs",
     "build": "pnpm -r build",
-    "typecheck": "pnpm -r typecheck",
+    "typecheck": "pnpm -r typecheck && pnpm typecheck:tests",
     "test": "vitest run --project unit",
     "test:api": "vitest run --project integration",
     "test:mock": "vitest run --project mock",
@@ -23,7 +21,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "dev:api": "pnpm --filter @todo/api dev",
-    "dev:web": "pnpm --filter @todo/web dev"
+    "dev:web": "pnpm --filter @todo/web dev",
+    "typecheck:tests": "tsc -p tsconfig.tests.json",
+    "check": "pnpm format:check && pnpm typecheck && pnpm test"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
