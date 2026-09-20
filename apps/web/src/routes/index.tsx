@@ -71,7 +71,7 @@ function App() {
         <a className="brand" href="/">
           ◒ <span>daybook</span>
         </a>
-        <span className="eyebrow">A LITTLE SPACE FOR YOUR DAY ALO ALO</span>
+        <span className="eyebrow">A LITTLE SPACE FOR YOUR DAY Hehe</span>
         {user && (
           <button
             className="quiet"
