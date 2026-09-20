@@ -1,6 +1,10 @@
+x-database-env: &database-env
+  DATABASE_URL: 'postgresql://dev:dev@db:5432/dev_db'
+  DIRECT_URL: 'postgresql://dev:dev@db:5432/dev_db'
+
 services:
   db: 
-    environment:
+    environment: &env-shared
       POSTGRES_USER: dev
       POSTGRES_PASSWORD: dev
       POSTGRES_DB: dev_db
@@ -13,8 +17,48 @@ services:
       timeout: 5s
       retries: 5
     ports:
-      - "127.0.0.1:54332:5432"
+      - "0.0.0.0:54332:5432"
+  migration:
+    image: api:dev 
+    command: pnpm --filter @todo/api db:migrate
+    environment:
+      <<: *database-env
+    depends_on:
+      db:
+        condition: service_healthy
+    
+  api:
+    image: api:dev
+    build:
+      context: .
+      dockerfile: ./apps/api/Dockerfile
+      target: dev
+    environment:
+      <<: *database-env
+      JWT_SECRET: a2CtNULfchQq6TBlMwQIIu6hoX2GOpDwc4B57rgfcsoCm5p1_XAiBby8eUHep3s7
+      APP_ORIGIN: http://127.0.0.1:3000
+      PORT: 3001
+      NODE_ENV: development
+      HOST: 0.0.0.0
+    ports:
+      - "127.0.0.1:3001:3001"
+    develop:
+      watch:
+        - action: sync
+          path: ./apps/api
+          target: /app/apps/api
+        - action: rebuild
+          path: ./apps/api/package.json
 
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      migration:
+        condition: service_completed_successfully
+        
   test-db:
     environment:
       POSTGRES_USER: test
@@ -33,7 +77,7 @@ services:
       start_period: 10s
     ports:
       - "127.0.0.1:54333:5432"
-  
+
   wiremock:
     image: wiremock/wiremock:3.13.2
     ports:
