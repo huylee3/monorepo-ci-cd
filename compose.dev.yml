@@ -51,13 +51,34 @@ services:
           path: ./apps/api/package.json
 
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/health/ready"]
+      test: ["CMD", "node", "--import", "tsx", "/app/apps/api/src/healthcheck.ts"]
       interval: 10s
       timeout: 5s
       retries: 5
     depends_on:
       migration:
         condition: service_completed_successfully
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    environment:
+      API_URL: http://api:3001
+      HOST: 0.0.0.0
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    develop:
+      watch:
+        - action: sync
+          path: ./apps/web
+          target: /app/apps/web
+        - action: rebuild
+          path: ./apps/web/package.json
+    depends_on:
+      api:
+        condition: service_healthy
         
   test-db:
     environment:
