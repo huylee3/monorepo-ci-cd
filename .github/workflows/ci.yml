@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      TEST_DATABASE_URL: postgresql://test:test@127.0.0.1:54332/test_db
+      WIREMOCK_URL: http://127.0.0.1:8080
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/setup@v1
+        with:
+          version: 12.4.2
+          runtime: node@24
+          cache: true
+
+      - name: Install packages
+        run: pnpm install
+
+      - name: Check format, typecheck, unit test
+        run: pnpm typecheck && pnpm test
+
+      # -d returns control to the job; --wait blocks only until healthchecks pass.
+      - name: Start test database and WireMock
+        run: docker compose -f compose.ci.yml up -d --wait
+
+      - name: Migrate test database
+        run: pnpm db:generate && pnpm db:migrate:test
+
+      - name: Run api mock test
+        run: pnpm test:mock
+
+      - name: Run integration test
+        run: | 
+          set -o pipefail
+          pnpm test:api 2>&1 | tee test-api.log
+          {
+            echo '## Integration tests'
+            echo
+            echo '```'
+            cat test-api.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+
+      - name: Service logs
+        if: always()
+        run: |
+          {
+            echo '### Compose services'
+            echo
+            echo '```'
+            docker compose -f compose.ci.yml ps
+            echo '```'
+            echo '### Compose log
+            echo
+            echo '```'
+            docker compose -f compose.ci.yml logs --no-color --tail 200
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

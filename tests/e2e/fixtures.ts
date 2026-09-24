@@ -9,7 +9,7 @@ export const test = base.extend<
   { database: Database }
 >({
   database: [
-    async ({}, use) => {
+    async ({}, use: (db: Database) => Promise<void>) => {
       Object.assign(process.env, readTestEnv());
       const { db } = await import('../../apps/api/src/repositories/database');
       try {
