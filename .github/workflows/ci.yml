@@ -14,7 +14,7 @@ jobs:
       TEST_DATABASE_URL: postgresql://test:test@127.0.0.1:54332/test_db
       WIREMOCK_URL: http://127.0.0.1:8080
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: pnpm/setup@v1
         with:
@@ -50,19 +50,21 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Service logs
+      - name: Save compose logs
         if: always()
         run: |
-          {
-            echo '### Compose services'
-            echo
-            echo '```'
-            docker compose -f compose.ci.yml ps
-            echo '```'
-            echo
-            echo '### Compose log'
-            echo
-            echo '```'
-            docker compose -f compose.ci.yml logs --no-color --tail 200
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
+          mkdir artifacts
+          docker compose -f compose.ci.yml ps > artifacts/compose-ps.txt
+          docker compose -f compose.ci.yml log --no-color --no-log-prefix > artifacts/compose.log
+
+      - name: Upload compose logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: compose-logs
+          path: artifacts/
+          if-no-files-found: warn
+          retention-days: 3
+
+        
+        
