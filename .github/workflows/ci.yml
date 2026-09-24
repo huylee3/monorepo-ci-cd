@@ -55,7 +55,7 @@ jobs:
         run: |
           mkdir artifacts
           docker compose -f compose.ci.yml ps > artifacts/compose-ps.txt
-          docker compose -f compose.ci.yml log --no-color --no-log-prefix > artifacts/compose.log
+          docker compose -f compose.ci.yml logs --no-color --no-log-prefix > artifacts/compose.log
 
       - name: Upload compose logs
         if: always()
