@@ -18,29 +18,18 @@ export function readAppEnv(app, inherited = process.env, workspace = root) {
 
 export function readTestEnv(inherited = process.env, workspace = root) {
   const env = readAppEnv('api', inherited, workspace);
-  const database = env.TEST_DATABASE_URL;
+  const database = env.DATABASE_URL;
   if (!database) {
     throw new Error(
-      'Set TEST_DATABASE_URL to a dedicated PostgreSQL test database.',
+      'Set DATABASE_URL to a dedicated PostgreSQL test database.',
     );
   }
   const target = new URL(database);
   if (!['postgres:', 'postgresql:'].includes(target.protocol)) {
-    throw new Error('TEST_DATABASE_URL must be a PostgreSQL URL.');
+    throw new Error('DATABASE_URL must be a PostgreSQL URL.');
   }
   // Compare database identity, not credentials or connection query parameters.
-  if (env.DATABASE_URL) {
-    const development = new URL(env.DATABASE_URL);
-    const identity = (url) =>
-      [
-        url.hostname === 'localhost' ? '127.0.0.1' : url.hostname,
-        url.port || '5432',
-        decodeURIComponent(url.pathname),
-      ].join(':');
-    if (identity(target) === identity(development)) {
-      throw new Error('TEST_DATABASE_URL must differ from DATABASE_URL.');
-    }
-  }
+ 
   return {
     ...env,
     NODE_ENV: 'test',

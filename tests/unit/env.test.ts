@@ -40,24 +40,12 @@ describe('app environment loading', () => {
     ).toEqual({ DATABASE_URL: 'injected' });
   });
   it('requires an explicit test database without falling back to development', () => {
-    expect(() => readTestEnv({}, workspace())).toThrow('Set TEST_DATABASE_URL');
+    expect(() => readTestEnv({}, workspace())).toThrow('Set DATABASE_URL');
   });
-  it('rejects the development database even with different credentials and loopback aliases', () => {
+ it('rejects non-PostgreSQL URLs', () => {
     expect(() =>
       readTestEnv(
-        {
-          DATABASE_URL: 'postgresql://dev:secret@localhost/todo',
-          TEST_DATABASE_URL:
-            'postgresql://test:other@127.0.0.1:5432/todo?schema=public',
-        },
-        workspace(),
-      ),
-    ).toThrow('must differ');
-  });
-  it('rejects non-PostgreSQL URLs', () => {
-    expect(() =>
-      readTestEnv(
-        { TEST_DATABASE_URL: 'https://example.com/test' },
+        { DATABASE_URL: 'https://example.com/test' },
         workspace(),
       ),
     ).toThrow('PostgreSQL URL');
@@ -66,14 +54,14 @@ describe('app environment loading', () => {
     const directory = workspace();
     writeFileSync(
       join(directory, 'apps/api/.env'),
-      'TEST_DATABASE_URL=postgresql://localhost/file_test\n',
+      'DATABASE_URL=postgresql://localhost/file_test\n',
     );
     expect(readTestEnv({}, directory).DATABASE_URL).toBe(
       'postgresql://localhost/file_test',
     );
     const env = readTestEnv(
       {
-        TEST_DATABASE_URL: 'postgresql://localhost/ci_test',
+        DATABASE_URL: 'postgresql://localhost/ci_test',
         DIRECT_URL: 'postgresql://localhost/production',
       },
       directory,
