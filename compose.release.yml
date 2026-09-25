@@ -17,7 +17,7 @@ services:
       - "127.0.0.1:54432:5432"
 
   api:
-    image: ${DOCKEHUB_USERNAME:-local}/todo-api:${IMAGE_TAG:-local} 
+    image: ${DOCKERHUB_USERNAME:-local}/todo-api:${IMAGE_TAG:-local} 
     build:
       context: .
       dockerfile: apps/api/Dockerfile
