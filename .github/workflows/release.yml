@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     env: 
       IMAGE_TAG: ${{ github.sha }}
+      DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
 
     steps:
       - uses: actions/checkout@v7
