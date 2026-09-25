@@ -17,7 +17,7 @@ services:
       - "127.0.0.1:54432:5432"
 
   api:
-    image: ${DOCKEHUB_USERNAME}/todo-api:${IMAGE_TAG:-local} 
+    image: ${DOCKEHUB_USERNAME:-local}/todo-api:${IMAGE_TAG:-local} 
     build:
       context: .
       dockerfile: apps/api/Dockerfile
@@ -49,7 +49,7 @@ services:
       retries: 10
       start_period: 15s
   web:
-    image: ${DOCKERHUB_USERNAME}/todo-web:${IMAGE_TAG:-local}
+    image: ${DOCKERHUB_USERNAME:-local}/todo-web:${IMAGE_TAG:-local}
     build:
       context: .
       dockerfile: apps/web/Dockerfile
