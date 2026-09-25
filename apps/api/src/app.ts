@@ -27,7 +27,7 @@ export function createApp(dependencies: AppDependencies) {
       ) ||
         !req.is('application/json'))
     ) {
-      res.status(403).json({ error: 'Invalid request origin or content type' });
+      res.status(403).json({ error: 'Invaliddd request origin or content type' });
       return;
     }
     next();

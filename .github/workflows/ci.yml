@@ -1,4 +1,4 @@
-name: CI
+name: CI on PR and Main
 
 on:
   pull_request:
@@ -11,10 +11,11 @@ jobs:
   test:
     runs-on: ubuntu-latest
     env:
-      TEST_DATABASE_URL: postgresql://test:test@127.0.0.1:54332/test_db
+      DATABASE_URL: postgresql://test:test@127.0.0.1:54332/test_db
       WIREMOCK_URL: http://127.0.0.1:8080
+      DIRECT_URL: postgresql://test:test@127.0.0.1:54432/test_db
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: pnpm/setup@v1
         with:
@@ -26,7 +27,12 @@ jobs:
         run: pnpm install
 
       - name: Check format, typecheck, unit test
-        run: pnpm typecheck && pnpm test
+        run: | 
+          {
+            echo "## Typecheck and Unit Test"
+            echo
+          } >> $GITHUB_STEP_SUMMARY
+          pnpm typecheck && pnpm test
 
       # -d returns control to the job; --wait blocks only until healthchecks pass.
       - name: Start test database and WireMock
@@ -36,33 +42,36 @@ jobs:
         run: pnpm db:generate && pnpm db:migrate:test
 
       - name: Run api mock test
-        run: pnpm test:mock
-
-      - name: Run integration test
-        run: | 
-          set -o pipefail
-          pnpm test:api 2>&1 | tee test-api.log
-          {
-            echo '## Integration tests'
-            echo
-            echo '```'
-            cat test-api.log
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
-
-
-      - name: Service logs
-        if: always()
         run: |
           {
-            echo '### Compose services'
+            echo "## API Mock Test"
             echo
-            echo '```'
-            docker compose -f compose.ci.yml ps
-            echo '```'
-            echo '### Compose log
+          } >> $GITHUB_STEP_SUMMARY
+          pnpm test:mock
+
+      - name: Run integration test
+        run: |
+          {
+            echo "## Integration Test"
             echo
-            echo '```'
-            docker compose -f compose.ci.yml logs --no-color --tail 200
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
+          } >> $GITHUB_STEP_SUMMARY
+          pnpm test:api
+
+      - name: Save compose logs
+        if: always()
+        run: |
+          mkdir artifacts
+          docker compose -f compose.ci.yml ps > artifacts/compose-ps.txt
+          docker compose -f compose.ci.yml logs --no-color --no-log-prefix > artifacts/compose.log
+
+      - name: Upload compose logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: compose-logs
+          path: artifacts/
+          if-no-files-found: warn
+          retention-days: 3
+
+        
+        
