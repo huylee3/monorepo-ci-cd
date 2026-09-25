@@ -49,6 +49,9 @@ jobs:
             cat test-api.log
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+        env:
+          FORCE_COLOR: 0
+          NO_COLOR: true
 
       - name: Save compose logs
         if: always()
