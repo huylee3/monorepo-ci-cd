@@ -27,8 +27,10 @@ jobs:
 
       - name: Check format, typecheck, unit test
         run: | 
-          echo "## Typecheck and Unit Test"
-          echo
+          {
+            echo "## Typecheck and Unit Test"
+            echo
+          } >> $GITHUB_STEP_SUMMARY
           pnpm typecheck && pnpm test
 
       # -d returns control to the job; --wait blocks only until healthchecks pass.
@@ -40,14 +42,18 @@ jobs:
 
       - name: Run api mock test
         run: |
-          echo "## API Mock Test"
-          echo
+          {
+            echo "## API Mock Test"
+            echo
+          } >> $GITHUB_STEP_SUMMARY
           pnpm test:mock
 
       - name: Run integration test
         run: |
-          echo "## Integration Test"
-          echo
+          {
+            echo "## Integration Test"
+            echo
+          } >> $GITHUB_STEP_SUMMARY
           pnpm test:api
 
       - name: Save compose logs
