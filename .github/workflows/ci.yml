@@ -26,7 +26,10 @@ jobs:
         run: pnpm install
 
       - name: Check format, typecheck, unit test
-        run: pnpm typecheck && pnpm test
+        run: | 
+          echo "## Typecheck and Unit Test"
+          echo
+          pnpm typecheck && pnpm test
 
       # -d returns control to the job; --wait blocks only until healthchecks pass.
       - name: Start test database and WireMock
@@ -36,13 +39,16 @@ jobs:
         run: pnpm db:generate && pnpm db:migrate:test
 
       - name: Run api mock test
-        run: pnpm test:mock
+        run: |
+          echo "## API Mock Test"
+          echo
+          pnpm test:mock
 
       - name: Run integration test
-        run: pnpm test:api
-        env:
-          FORCE_COLOR: 0
-          NO_COLOR: true
+        run: |
+          echo "## Integration Test"
+          echo
+          pnpm test:api
 
       - name: Save compose logs
         if: always()
