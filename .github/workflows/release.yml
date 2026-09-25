@@ -10,7 +10,9 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+    env: 
+      IMAGE_TAG: ${{ github.sha }}
+
     steps:
       - uses: actions/checkout@v7
 
@@ -46,6 +48,15 @@ jobs:
         env:
           DATABASE_URL: postgresql://test:test@127.0.0.1:54432/test_db
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
+      
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNANE }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Publish Image
+        run: docker compose -f compose.release.yml push api web
 
       - name: Save compose logs
         if: always()
@@ -61,3 +72,5 @@ jobs:
           path: build-logs/
           if-no-files-found: warn
           retention-days: 3
+
+

@@ -17,10 +17,14 @@ services:
       - "127.0.0.1:54432:5432"
 
   api:
+    image: todo-api:${IMAGE_TAG:-local} 
     build:
       context: .
       dockerfile: apps/api/Dockerfile
       target: prod
+      labels:
+        org.opencontainers.image.revision: ${IMAGE_TAG:-local}
+        org.opencontainers.image.source: https://github.com/${GITHUB_REPOSITORY}
     environment:
       HOST: 0.0.0.0
       NODE_ENV: production
@@ -45,10 +49,14 @@ services:
       retries: 10
       start_period: 15s
   web:
+    image: todo-web:${IMAGE_TAG:-local}
     build:
       context: .
       dockerfile: apps/web/Dockerfile
       target: prod
+      labels:
+        org.opencontainers.image.revision: ${IMAGE_TAG:-local}
+        org.opencontainers.image.source: https://github.com/${GITHUB_REPOSITORY}
     environment:
       API_URL: http://api:3001
       HOST: 0.0.0.0
