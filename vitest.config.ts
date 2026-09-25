@@ -2,9 +2,6 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    reporters: [
-				['github-actions', { displayAnnotations: false}]
-		],
     fileParallelism: false,
     projects: [
       {

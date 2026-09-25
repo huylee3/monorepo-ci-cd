@@ -39,16 +39,7 @@ jobs:
         run: pnpm test:mock
 
       - name: Run integration test
-        run: | 
-          set -o pipefail
-          pnpm test:api 2>&1 | tee test-api.log
-          {
-            echo '## Integration tests'
-            echo
-            echo '```'
-            cat test-api.log
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
+        run: pnpm test:api
         env:
           FORCE_COLOR: 0
           NO_COLOR: true
